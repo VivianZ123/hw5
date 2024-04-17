@@ -5,56 +5,66 @@
 #include <algorithm> 
 #include <map>
 #include <set>
+#include <functional>
 #endif
 
 #include "wordle.h"
 #include "dict-eng.h"
 using namespace std;
 
+set<string> generatePermutations(string in, const string& floating, size_t pos);
 
-// Add prototypes of helper functions here
-
-
-// Definition of primary wordle function
-std::set<std::string> wordle(
-    const std::string& in,
-    const std::string& floating,
-    const std::set<std::string>& dict)
+set<string> wordle(
+    const string& in,
+    const string& floating,
+    const set<string>& dict)
 {
-    // Add your code here
+    set<string> permutations = generatePermutations(in, floating, 0);
+    set<string> validWords;
 
-    for (char c : floating) {
-        floating_counts[c]++;
-    }
-
-    void generate(int index) {
-        if (index == in.size()) {
-            if (all floating letters are used and current_word is in dict) {
-                results.insert(current_word);
-            }
-            return;
+    for (const auto& word : permutations) {
+        if (dict.find(word) != dict.end()) {
+            validWords.insert(word);
         }
-
-        if (in[index] != '-') {
-            current_word[index] = in[index];
-            generate(index + 1);
-        } else { 
-            for (char c = 'a'; c <= 'z'; c++) {
-                current_word[index] = c;
-                if (floating_counts[c] > 0) {
-                    floating_counts[c]--;
-                    generate(index + 1);
-                    floating_counts[c]++;
-                } else {
-                    generate(index + 1);
-                }
-            }
-        }
-        current_word[index] = '-';
     }
-
-    generate(0);
-    return results;
+    return validWords;
 }
+set<string> generatePermutations(string in, const string& floating, size_t pos) {
+    set<string> permutations;
 
-// Define any helper functions here
+    if (pos == in.size()) {
+        permutations.insert(in);
+        return permutations;
+    }
+    unsigned int count = 0;
+    for (size_t i = 0; i < in.length(); i++) {
+        if (in[i] == '-') {
+            ++count;
+        }
+    }
+    if (count == 0) {
+        permutations.insert(in);
+        return permutations;
+    }
+    if (in[pos] == '-') {
+        for (size_t i = 0; i < floating.size(); ++i) {
+            in[pos] = floating[i];
+            string nextFloating = floating.substr(0, i) + floating.substr(i + 1);
+            auto tempPermutations = generatePermutations(in, nextFloating, pos + 1);
+            permutations.insert(tempPermutations.begin(), tempPermutations.end());
+        }
+        if (floating.length() < count) {
+            for (char c = 'a'; c <= 'z'; ++c) {
+                in[pos] = c;
+                auto tempPermutations = generatePermutations(in, floating, pos + 1);
+                permutations.insert(tempPermutations.begin(), tempPermutations.end());
+            }
+        }
+        in[pos] = '-';
+    } else {
+        auto tempPermutations = generatePermutations(in, floating, pos + 1);
+        permutations.insert(tempPermutations.begin(), tempPermutations.end());
+    }
+
+    return permutations;
+}
